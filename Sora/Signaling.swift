@@ -262,25 +262,25 @@ public struct SignalingConnect {
     public var multistreamEnabled: Bool?
     
     /// 映像の可否
-    public var videoEnabled: Bool
+    public var videoEnabled: Bool?
     
     /// 映像コーデック
-    public var videoCodec: VideoCodec
+    public var videoCodec: VideoCodec?
     
     /// 映像ビットレート
     public var videoBitRate: Int?
     
     /// 音声の可否
-    public var audioEnabled: Bool
+    public var audioEnabled: Bool?
     
     /// 音声コーデック
-    public var audioCodec: AudioCodec
+    public var audioCodec: AudioCodec?
     
     /// 音声ビットレート
     public var audioBitRate: Int?
 
     /// スポットライトの可否
-    public var spotlightEnabled: Configuration.Spotlight
+    public var spotlightEnabled: Configuration.Spotlight?
 
     /// スポットライトの対象人数
     @available(*, deprecated, renamed: "spotlightNumber",
@@ -310,7 +310,7 @@ public struct SignalingConnect {
     public var spotlightNumber: Int?
     
     /// サイマルキャストの可否
-    public var simulcastEnabled: Bool
+    public var simulcastEnabled: Bool?
 
     /// サイマルキャストでの映像の種類
     public var simulcastRid: SimulcastRid?
@@ -353,7 +353,7 @@ public struct SignalingOffer {
     public struct Encoding {
 
         /// エンコーディングの有効・無効
-        public let active: Bool
+        public let active: Bool?
 
         /// RTP ストリーム ID
         public let rid: String?
@@ -388,10 +388,10 @@ public struct SignalingOffer {
     }
 
     /// クライアント ID
-    public let clientId: String
+    public let clientId: String?
     
     /// 接続 ID
-    public let connectionId: String
+    public let connectionId: String?
     
     /// SDP メッセージ
     public let sdp: String
@@ -522,10 +522,10 @@ public struct SignalingNotifyConnection {
     // MARK: 接続状態
     
     /// 接続時間
-    public var connectionTime: Int
+    public var connectionTime: Int?
     
     /// 接続中のクライアントの数
-    public var connectionCount: Int
+    public var connectionCount: Int?
     
     /// 接続中のパブリッシャーの数
     @available(*, deprecated, message: "このプロパティは channelSendonlyConnections と channelSendrecvConnections に置き換えられました。")
@@ -558,7 +558,7 @@ public struct SignalingNotifySpotlightChanged {
     public var connectionId: String?
     
     /// スポットライト ID
-    public var spotlightId: String
+    public var spotlightId: String?
     
     /// 固定の有無
     public var isFixed: Bool?
@@ -577,7 +577,7 @@ public struct SignalingNotifySpotlightChanged {
 public struct SignalingNotifyNetworkStatus {
     
     /// ネットワークの不安定度
-    public var unstableLevel: Int
+    public var unstableLevel: Int?
     
 }
 
@@ -782,7 +782,7 @@ extension SignalingConnect: Codable {
         try container.encodeIfPresent(webRTCVersion, forKey: .libwebrtc)
         try container.encodeIfPresent(environment, forKey: .environment)
 
-        if videoEnabled {
+        if videoEnabled ?? false {
             if videoCodec != .default || videoBitRate != nil {
                 var videoContainer = container
                     .nestedContainer(keyedBy: VideoCodingKeys.self,
@@ -797,7 +797,7 @@ extension SignalingConnect: Codable {
             try container.encode(false, forKey: .video)
         }
         
-        if audioEnabled {
+        if audioEnabled ?? false {
             if audioCodec != .default || audioBitRate != nil {
                 var audioContainer = container
                     .nestedContainer(keyedBy: AudioCodingKeys.self,
@@ -812,7 +812,7 @@ extension SignalingConnect: Codable {
             try container.encode(false, forKey: .audio)
         }
         
-        if simulcastEnabled {
+        if simulcastEnabled ?? false {
             try container.encode(true, forKey: .simulcast)
             switch role {
             case .downstream, .sendrecv, .recvonly:
@@ -830,7 +830,7 @@ extension SignalingConnect: Codable {
                 try container.encode(true, forKey: .spotlight)
                 try container.encodeIfPresent(spotlightNumber, forKey: .spotlight_number)
             }
-        case .disabled:
+        case .disabled, .none:
             break
         }
     }

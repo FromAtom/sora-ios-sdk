@@ -1065,8 +1065,8 @@ extension RTCRtpSender {
                     oldEncoding.rid = rid
                 }
                 
-                Logger.debug(type: .peerChannel, message: "active => \(encoding.active)")
-                oldEncoding.isActive = encoding.active
+                Logger.debug(type: .peerChannel, message: "active => \(String(describing: encoding.active))")
+                oldEncoding.isActive = encoding.active ?? false
                 Logger.debug(type: .peerChannel, message: "old active => \(oldEncoding.isActive)")
 
                 if let value = encoding.maxFramerate {
