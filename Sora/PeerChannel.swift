@@ -244,6 +244,33 @@ class BasicPeerChannel: PeerChannel {
     
 }
 
+
+class CustomVerifier : NSObject, RTCSSLCertificateVerifier {
+
+    func verifyCertificate(_ certificate: Data) -> Bool {
+
+        print("certificate: \(certificate.base64EncodedData().base64EncodedString())")
+        print("certificate: \(certificate.base64EncodedString())")
+        guard let cert = SecCertificateCreateWithData(kCFAllocatorDefault, certificate as CFData) else {
+            Logger.debug(type: .peerChannel, message: "verifyCertificate failed")
+            return false
+        }
+        
+        var trust: SecTrust?
+        var result: SecTrustResultType = .invalid
+
+        SecTrustCreateWithCertificates(cert, SecPolicyCreateBasicX509(), &trust)
+        SecTrustEvaluate(trust!, &result)
+        if (result != .unspecified && result != .proceed) {
+            Logger.debug(type: .peerChannel, message: "verifyCertificate failed: result => \(result)")
+            return false
+        } else {
+            Logger.debug(type: .peerChannel, message: "verifyCertificate passed")
+            return true
+        }
+    }
+}
+
 // MARK: -
 
 class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
@@ -346,10 +373,13 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
         Logger.debug(type: .peerChannel, message: "try connecting")
         Logger.debug(type: .peerChannel, message: "try connecting to signaling channel")
         
+        let dependencies = RTCPeerConnectionDependencies()
+        dependencies.sslCertificateVerifier = CustomVerifier()
         self.webRTCConfiguration = channel.configuration.webRTCConfiguration
         nativeChannel = NativePeerChannelFactory.default
             .createNativePeerChannel(configuration: webRTCConfiguration,
                                      constraints: webRTCConfiguration.constraints,
+                                     dependencies: dependencies,
                                      delegate: self)
         guard nativeChannel != nil else {
             let message = "createNativePeerChannel failed"

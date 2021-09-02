@@ -60,7 +60,15 @@ class NativePeerChannelFactory {
     
     func createNativePeerChannel(configuration: WebRTCConfiguration,
                                  constraints: MediaConstraints,
+                                 dependencies: RTCPeerConnectionDependencies? = nil,
                                  delegate: RTCPeerConnectionDelegate?) -> RTCPeerConnection? {
+        if let dependencies = dependencies {
+            return nativeFactory
+                .peerConnection(with: configuration.nativeValue,
+                                constraints: constraints.nativeValue,
+                                dependencies: dependencies,
+                                delegate: delegate)
+        }
         return nativeFactory
             .peerConnection(with: configuration.nativeValue,
                             constraints: constraints.nativeValue,
