@@ -245,29 +245,41 @@ class BasicPeerChannel: PeerChannel {
 }
 
 
-class CustomVerifier : NSObject, RTCSSLCertificateVerifier {
+class SSLCertificateVerifier : NSObject, RTCSSLCertificateVerifier {
+
+    var certificates: [SecCertificate] = []
 
     func verifyCertificate(_ certificate: Data) -> Bool {
-
-        print("certificate: \(certificate.base64EncodedData().base64EncodedString())")
-        print("certificate: \(certificate.base64EncodedString())")
         guard let cert = SecCertificateCreateWithData(kCFAllocatorDefault, certificate as CFData) else {
-            Logger.debug(type: .peerChannel, message: "verifyCertificate failed")
+            Logger.debug(type: .peerChannel, message: "\(#function): SecCertificateCreateWithData failed."
+                         + "certificate.base64EncodedString() => \(certificate.base64EncodedString())")
+            
             return false
         }
         
+        // certificates の先頭に証明書を足して
+        // 参照: https://developer.apple.com/documentation/security/1401555-sectrustcreatewithcertificates
+        // The certificate to be verified, plus any other certificates you think might be useful for verifying the certificate.
+        // The certificate to be verified must be the first in the array.
+        certificates.insert(cert, at: 0)
+        Logger.debug(type: .peerChannel, message: "\(#function): certificates => \(certificates)")
+        
         var trust: SecTrust?
-        var result: SecTrustResultType = .invalid
-
-        SecTrustCreateWithCertificates(cert, SecPolicyCreateBasicX509(), &trust)
-        SecTrustEvaluate(trust!, &result)
-        if (result != .unspecified && result != .proceed) {
-            Logger.debug(type: .peerChannel, message: "verifyCertificate failed: result => \(result)")
+        let status = SecTrustCreateWithCertificates(cert, SecPolicyCreateBasicX509(), &trust)
+        guard status == errSecSuccess else {
+            Logger.debug(type: .peerChannel, message: "\(#function): SecTrustCreateWithCertificates failed. status => \(status.description)")
             return false
-        } else {
-            Logger.debug(type: .peerChannel, message: "verifyCertificate passed")
-            return true
         }
+        
+        var error: CFError?
+        let result = SecTrustEvaluateWithError(trust!, &error)
+        if let error = error {
+            Logger.debug(type: .peerChannel, message: "\(#function): SecTrustEvaluateWithError failed. error => \(error.localizedDescription)")
+            return false;
+        }
+        
+        Logger.debug(type: .peerChannel, message: "\(#function): result => \(result.description)")
+        return result
     }
 }
 
@@ -374,7 +386,7 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
         Logger.debug(type: .peerChannel, message: "try connecting to signaling channel")
         
         let dependencies = RTCPeerConnectionDependencies()
-        dependencies.sslCertificateVerifier = CustomVerifier()
+        dependencies.sslCertificateVerifier = SSLCertificateVerifier()
         self.webRTCConfiguration = channel.configuration.webRTCConfiguration
         nativeChannel = NativePeerChannelFactory.default
             .createNativePeerChannel(configuration: webRTCConfiguration,
