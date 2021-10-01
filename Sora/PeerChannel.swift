@@ -5,7 +5,7 @@ import WebRTC
  ピアチャネルのイベントハンドラです。
  */
 public final class PeerChannelHandlers {
-    
+
     /// このプロパティは onDisconnect に置き換えられました。
     @available(*, deprecated, renamed: "onDisconnect",
     message: "このプロパティは onDisconnect に置き換えられました。")
@@ -13,7 +13,7 @@ public final class PeerChannelHandlers {
         get { onDisconnect }
         set { onDisconnect = newValue }
     }
-    
+
     /// このプロパティは onAddStream に置き換えられました。
     @available(*, deprecated, renamed: "onAddStream",
     message: "このプロパティは onConnect に置き換えられました。")
@@ -21,7 +21,7 @@ public final class PeerChannelHandlers {
         get { onAddStream }
         set { onAddStream = newValue }
     }
-    
+
     /// このプロパティは onRemoveStream に置き換えられました。
     @available(*, deprecated, renamed: "onRemoveStream",
     message: "このプロパティは onRemoveStream に置き換えられました。")
@@ -29,7 +29,7 @@ public final class PeerChannelHandlers {
         get { onRemoveStream }
         set { onRemoveStream = newValue }
     }
-    
+
     /// このプロパティは onUpdate に置き換えられました。
     @available(*, deprecated, renamed: "onUpdate",
     message: "このプロパティは onUpdate に置き換えられました。")
@@ -37,7 +37,7 @@ public final class PeerChannelHandlers {
         get { onUpdate }
         set { onUpdate = newValue }
     }
-    
+
     /// このプロパティは onReceiveSignaling に置き換えられました。
     @available(*, deprecated, renamed: "onReceiveSignaling",
     message: "このプロパティは onReceiveSignaling に置き換えられました。")
@@ -45,26 +45,26 @@ public final class PeerChannelHandlers {
         get { onReceiveSignaling }
         set { onReceiveSignaling = newValue }
     }
-    
+
     /// 接続解除時に呼ばれるクロージャー
     public var onDisconnect: ((Error?) -> Void)?
-    
+
     /// ストリームの追加時に呼ばれるクロージャー
     public var onAddStream: ((MediaStream) -> Void)?
-    
+
     /// ストリームの除去時に呼ばれるクロージャー
     public var onRemoveStream: ((MediaStream) -> Void)?
-    
+
     /// マルチストリームの状態の更新に呼ばれるクロージャー。
     /// 更新により、ストリームの追加または除去が行われます。
     public var onUpdate: ((String) -> Void)?
-    
+
     /// シグナリング受信時に呼ばれるクロージャー
     public var onReceiveSignaling: ((Signaling) -> Void)?
-    
+
     /// 初期化します。
     public init() {}
-    
+
 }
 
 extension RTCPeerConnectionState: CustomStringConvertible {
@@ -101,40 +101,40 @@ extension RTCPeerConnectionState: CustomStringConvertible {
  メディアストリームはシングルストリームでは 1 つ、マルチストリームでは複数用意されます。
  */
 public protocol PeerChannel: AnyObject {
-    
+
     // MARK: - イベントハンドラ
-    
+
     /// イベントハンドラ
     var handlers: PeerChannelHandlers { get set }
-    
+
     /**
      内部処理で使われるイベントハンドラ。
      このハンドラをカスタマイズに使うべきではありません。
      */
     var internalHandlers: PeerChannelHandlers { get set }
-    
+
     // MARK: - 接続情報
-    
+
     /// クライアントの設定
     var configuration: Configuration { get }
-    
+
     /// クライアント ID 。接続成立後にセットされます。
     var clientId: String? { get }
-    
+
     /// 接続 ID 。接続成立後にセットされます。
     var connectionId: String? { get }
-    
+
     /// メディアストリームのリスト。シングルストリームでは 1 つです。
     var streams: [MediaStream] { get }
-    
+
     /// 接続状態
     var state: ConnectionState { get }
-    
+
     /// シグナリングチャネル
     var signalingChannel: SignalingChannel { get }
-    
+
     // MARK: - インスタンスの生成
-    
+
     /**
      初期化します。
      
@@ -142,9 +142,9 @@ public protocol PeerChannel: AnyObject {
      - parameter signalingChannel: 使用するシグナリングチャネル
      */
     init(configuration: Configuration, signalingChannel: SignalingChannel)
-    
+
     // MARK: - 接続
-    
+
     /**
      サーバーに接続します。
      
@@ -152,87 +152,87 @@ public protocol PeerChannel: AnyObject {
      - parameter error: (接続失敗時のみ) エラー
      */
     func connect(handler: @escaping (_ error: Error?) -> Void)
-    
+
     /**
      接続を解除します。
      
      - parameter error: 接続解除の原因となったエラー
      */
     func disconnect(error: Error?)
-    
+
 }
 
 // MARK: -
 
 class BasicPeerChannel: PeerChannel {
-    
+
     var handlers: PeerChannelHandlers = PeerChannelHandlers()
     var internalHandlers: PeerChannelHandlers = PeerChannelHandlers()
     let configuration: Configuration
     let signalingChannel: SignalingChannel
-    
+
     private(set) var streams: [MediaStream] = []
     private(set) var iceCandidates: [ICECandidate] = []
-    
+
     var clientId: String? {
         get { return context.clientId }
     }
-    
+
     var connectionId: String? {
         context.connectionId
     }
-    
+
     var state: ConnectionState {
         get {
             return context.state
         }
     }
-    
+
     private var context: BasicPeerChannelContext!
-    
+
     required init(configuration: Configuration, signalingChannel: SignalingChannel) {
         self.configuration = configuration
         self.signalingChannel = signalingChannel
         context = BasicPeerChannelContext(channel: self)
     }
-    
+
     func add(stream: MediaStream) {
         streams.append(stream)
         Logger.debug(type: .peerChannel, message: "call onAddStream")
         internalHandlers.onAddStream?(stream)
         handlers.onAddStream?(stream)
     }
-    
+
     func remove(streamId: String) {
         let stream = streams.first { stream in stream.streamId == streamId }
         if let stream = stream {
             remove(stream: stream)
         }
     }
-    
+
     func remove(stream: MediaStream) {
         streams = streams.filter { each in each.streamId != stream.streamId }
         Logger.debug(type: .peerChannel, message: "call onRemoveStream")
         internalHandlers.onRemoveStream?(stream)
         handlers.onRemoveStream?(stream)
     }
-    
+
     func add(iceCandidate: ICECandidate) {
         iceCandidates.append(iceCandidate)
     }
-    
+
     func remove(iceCandidate: ICECandidate) {
         iceCandidates = iceCandidates.filter { each in each == iceCandidate }
     }
-    
+
     func connect(handler: @escaping (Error?) -> Void) {
         context.connect(handler: handler)
     }
-    
+
     func disconnect(error: Error?) {
         context.disconnect(error: error)
     }
-    
+
     fileprivate func terminateAllStreams() {
         for stream in streams {
             stream.terminate()
@@ -241,19 +241,19 @@ class BasicPeerChannel: PeerChannel {
         // Do not call `handlers.onRemoveStreamHandler` here
         // This method is meant to be called only when disconnection cleanup
     }
-    
+
 }
 
 // MARK: -
 
 class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
-    
+
     final class Lock {
-        
+
         weak var context: BasicPeerChannelContext?
         var count: Int = 0
         var shouldDisconnect: (Bool, Error?) = (false, nil)
-        
+
         func waitDisconnect(error: Error?) {
             if count == 0 {
                 context?.basicDisconnect(error: error)
@@ -261,11 +261,11 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
                 shouldDisconnect = (true, error)
             }
         }
-        
+
         func lock() {
             count += 1
         }
-        
+
         func unlock() {
             if count <= 0 {
                 fatalError("count is already 0")
@@ -275,7 +275,7 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
                 disconnect()
             }
         }
-        
+
         func disconnect() {
             switch shouldDisconnect {
             case (true, let error):
@@ -290,7 +290,7 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
             }
         }
     }
-    
+
     weak var channel: BasicPeerChannel!
     var state: ConnectionState = .disconnected {
         didSet {
@@ -298,15 +298,15 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
                          message: "changed BasicPeerChannelContext.state from \(oldValue) to \(state)")
         }
     }
-    
+
     // connect() の成功後は必ずセットされるので nil チェックを省略する
     // connect() 実行前は nil なのでアクセスしないこと
     var nativeChannel: RTCPeerConnection!
-    
+
     var signalingChannel: SignalingChannel {
         get { return channel.signalingChannel }
     }
-    
+
     var webRTCConfiguration: WebRTCConfiguration!
     var clientId: String?
     var connectionId: String?
@@ -314,13 +314,13 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
     var configuration: Configuration {
         get { return channel.configuration }
     }
-    
+
     var onConnectHandler: ((Error?) -> Void)?
-    
+
     var isAudioInputInitialized: Bool = false
-    
+
     private var lock: Lock
-    
+
     private var offerEncodings: [SignalingOffer.Encoding]?
 
     init(channel: BasicPeerChannel) {
@@ -328,26 +328,26 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
         lock = Lock()
         super.init()
         lock.context = self
-        
+
         signalingChannel.internalHandlers.onDisconnect = { [weak self] error in
             self?.disconnect(error: error)
         }
-        
+
         signalingChannel.internalHandlers.onReceive = { [weak self] signaling in
             self?.handle(signaling: signaling)
         }
     }
-    
+
     func connect(handler: @escaping (Error?) -> Void) {
         if channel.state.isConnecting {
             handler(SoraError.connectionBusy(reason:
                 "PeerChannel is already connected"))
             return
         }
-        
+
         Logger.debug(type: .peerChannel, message: "try connecting")
         Logger.debug(type: .peerChannel, message: "try connecting to signaling channel")
-        
+
         self.webRTCConfiguration = channel.configuration.webRTCConfiguration
         nativeChannel = NativePeerChannelFactory.default
             .createNativePeerChannel(configuration: webRTCConfiguration,
@@ -359,7 +359,7 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
             handler(SoraError.peerChannelError(reason: message))
             return
         }
-        
+
         // このロックは finishConnecting() で解除される
         lock.lock()
         onConnectHandler = handler
@@ -367,13 +367,13 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
         // サイマルキャストを利用する場合は、 RTCPeerConnection の生成前に WrapperVideoEncoderFactory を設定する必要がある
         // また、 (非レガシーな) スポットライトはサイマルキャストを利用しているため、同様に設定が必要になる
         WrapperVideoEncoderFactory.shared.simulcastEnabled = configuration.simulcastEnabled || (!Sora.isSpotlightLegacyEnabled && configuration.spotlightEnabled == .enabled)
-        
+
         signalingChannel.connect { [weak self] error in
             self?.sendConnectMessage(error: error)
         }
         state = .connecting
     }
-    
+
     func sendConnectMessage(error: Error?) {
         if let error = error {
             Logger.error(type: .peerChannel,
@@ -382,13 +382,12 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
             onConnectHandler = nil
             return
         }
-        
+
         if configuration.isSender {
             Logger.debug(type: .peerChannel, message: "try creating offer SDP")
             NativePeerChannelFactory.default
                 .createClientOfferSDP(configuration: webRTCConfiguration,
-                                      constraints: webRTCConfiguration.constraints)
-                { sdp, sdpError in
+                                      constraints: webRTCConfiguration.constraints) { sdp, sdpError in
                     if let error = sdpError {
                         Logger.debug(type: .peerChannel,
                                      message: "failed to create offer SDP (\(error.localizedDescription))")
@@ -402,7 +401,7 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
             self.sendConnectMessage(with: nil, error: nil)
         }
     }
-    
+
     func sendConnectMessage(with sdp: String?, error: Error?) {
         if error != nil {
             Logger.error(type: .peerChannel,
@@ -411,10 +410,10 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
                 reason: "failed connecting to signaling channel"))
             return
         }
-        
+
         Logger.debug(type: .peerChannel,
                      message: "did connect to signaling channel")
-        
+
         var role: SignalingRole!
         var multistream = configuration.multistreamEnabled || configuration.spotlightEnabled == .enabled
         switch configuration.role {
@@ -429,11 +428,11 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
             role = .recvonly
             multistream = true
         }
-        
+
         let soraClient = "Sora iOS SDK \(SDKInfo.version)"
-        
+
         let webRTCVersion = "Shiguredo-build \(WebRTCInfo.version) (\(WebRTCInfo.version).\(WebRTCInfo.commitPosition).\(WebRTCInfo.maintenanceVersion) \(WebRTCInfo.shortRevision))"
-        
+
         let simulcast = configuration.simulcastEnabled || (!Sora.isSpotlightLegacyEnabled && configuration.spotlightEnabled == .enabled)
         let connect = SignalingConnect(
             role: role,
@@ -464,11 +463,11 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
         Logger.debug(type: .peerChannel, message: "send connect")
         signalingChannel.send(message: Signaling.connect(connect))
     }
-    
+
     func initializeSenderStream() {
         Logger.debug(type: .peerChannel,
                      message: "initialize sender stream")
-        
+
         let nativeStream = NativePeerChannelFactory.default
             .createNativeSenderStream(streamId: configuration.publisherStreamId,
                                          videoTrackId:
@@ -478,10 +477,10 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
                                          constraints: webRTCConfiguration.constraints)
         let stream = BasicMediaStream(peerChannel: channel,
                                       nativeStream: nativeStream)
-        
+
         if configuration.videoEnabled && configuration.cameraSettings.isEnabled {
             let position = configuration.cameraSettings.position
-            
+
             // position に対応した CameraVideoCapturer を取得する
             let capturer: CameraVideoCapturer
             switch position {
@@ -523,7 +522,7 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
 
             if CameraVideoCapturer.current != nil && CameraVideoCapturer.current!.isRunning {
                 // CameraVideoCapturer.current を停止してから capturer を start する
-                CameraVideoCapturer.current!.stop() { (error: Error?) in
+                CameraVideoCapturer.current!.stop { (error: Error?) in
                     guard error == nil else {
                         Logger.debug(type: .peerChannel,
                                      message: "CameraVideoCapturer.stop failed =>  \(error!)")
@@ -554,7 +553,7 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
                 }
             }
         }
-        
+
         if configuration.audioEnabled {
             if isAudioInputInitialized {
                 Logger.debug(type: .peerChannel,
@@ -562,14 +561,14 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
             } else {
                 Logger.debug(type: .peerChannel,
                              message: "initialize audio input")
-                
+
                 // カテゴリをマイク用途のものに変更する
                 // libwebrtc の内部で参照される RTCAudioSessionConfiguration を使う必要がある
                 Logger.debug(type: .peerChannel,
                              message: "change audio session category (playAndRecord)")
                 RTCAudioSessionConfiguration.webRTC().category =
                     AVAudioSession.Category.playAndRecord.rawValue
-                
+
                 RTCAudioSession.sharedInstance().initializeInput { error in
                     if let error = error {
                         Logger.debug(type: .peerChannel,
@@ -582,7 +581,7 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
                 }
             }
         }
-        
+
         if let track = stream.nativeVideoTrack {
             nativeChannel.add(track,
                               streamIds: [stream.nativeStream.streamId])
@@ -595,7 +594,7 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
         Logger.debug(type: .peerChannel,
                      message: "create publisher stream (id: \(configuration.publisherStreamId))")
     }
-    
+
     /** `initializeSenderStream()` にて生成されたリソースを開放するための、対になるメソッドです。 */
     func terminateSenderStream() {
         if configuration.videoEnabled || configuration.cameraSettings.isEnabled {
@@ -610,14 +609,14 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
             }
         }
     }
-    
+
     func createAnswer(isSender: Bool,
                       offer: String,
                       constraints: RTCMediaConstraints,
                       handler: @escaping (String?, Error?) -> Void) {
         Logger.debug(type: .peerChannel, message: "try create answer")
         Logger.debug(type: .peerChannel, message: offer)
-        
+
         Logger.debug(type: .peerChannel, message: "try setting remote description")
         let offer = RTCSessionDescription(type: .offer, sdp: offer)
         nativeChannel.setRemoteDescription(offer) { error in
@@ -629,12 +628,12 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
             }
             Logger.debug(type: .peerChannel, message: "did set remote description")
             Logger.debug(type: .peerChannel, message: "\(offer.sdpDescription)")
-            
+
             if isSender {
                 self.initializeSenderStream()
                 self.updateSenderOfferEncodings()
             }
-            
+
             Logger.debug(type: .peerChannel, message: "try creating native answer")
             self.nativeChannel.answer(for: constraints) { answer, error in
                 guard error == nil else {
@@ -644,7 +643,7 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
                     return
                 }
                 Logger.debug(type: .peerChannel, message: "did create answer")
-                
+
                 Logger.debug(type: .peerChannel, message: "try setting local description")
                 self.nativeChannel.setLocalDescription(answer!) { error in
                     guard error == nil else {
@@ -664,7 +663,7 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
             }
         }
     }
-        
+
     private func updateSenderOfferEncodings() {
         guard let oldEncodings = offerEncodings else {
             return
@@ -674,11 +673,11 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
             sender.updateOfferEncodings(oldEncodings)
         }
     }
-    
+
     func createAndSendAnswer(offer: SignalingOffer) {
         Logger.debug(type: .peerChannel, message: "try sending answer")
         offerEncodings = offer.encodings
-        
+
         if let config = offer.configuration {
             Logger.debug(type: .peerChannel, message: "update configuration")
             Logger.debug(type: .peerChannel, message: "ICE server infos => \(config.iceServerInfos)")
@@ -687,12 +686,11 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
             webRTCConfiguration.iceTransportPolicy = config.iceTransportPolicy
             nativeChannel.setConfiguration(webRTCConfiguration.nativeValue)
         }
-        
+
         lock.lock()
         createAnswer(isSender: configuration.isSender,
                      offer: offer.sdp,
-                     constraints: webRTCConfiguration.nativeConstraints)
-        { sdp, error in
+                     constraints: webRTCConfiguration.nativeConstraints) { sdp, error in
             guard error == nil else {
                 Logger.error(type: .peerChannel,
                              message: "failed to create answer (\(error!.localizedDescription))")
@@ -701,22 +699,20 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
                     .peerChannelError(reason: "failed to create answer"))
                 return
             }
-            
+
             let answer = SignalingAnswer(sdp: sdp!)
             self.signalingChannel.send(message: Signaling.answer(answer))
             self.lock.unlock()
             Logger.debug(type: .peerChannel, message: "did send answer")
         }
     }
-    
-    
+
     func createAndSendUpdateAnswer(forOffer offer: String) {
         Logger.debug(type: .peerChannel, message: "create and send update-answer")
         lock.lock()
         createAnswer(isSender: false,
                      offer: offer,
-                     constraints: webRTCConfiguration.nativeConstraints)
-        { answer, error in
+                     constraints: webRTCConfiguration.nativeConstraints) { answer, error in
             guard error == nil else {
                 Logger.error(type: .peerChannel,
                              message: "failed to create update-answer (\(error!.localizedDescription)")
@@ -725,29 +721,28 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
                     .peerChannelError(reason: "failed to create update-answer"))
                 return
             }
-            
+
             let message = Signaling.update(SignalingUpdate(sdp: answer!))
             self.signalingChannel.send(message: message)
-            
-            if (self.configuration.isSender) {
+
+            if self.configuration.isSender {
                 self.updateSenderOfferEncodings()
             }
-            
+
             Logger.debug(type: .peerChannel, message: "call onUpdate")
             self.channel.internalHandlers.onUpdate?(answer!)
             self.channel.handlers.onUpdate?(answer!)
-            
+
             self.lock.unlock()
         }
     }
-    
+
     func createAndSendReAnswer(forReOffer reOffer: String) {
         Logger.debug(type: .peerChannel, message: "create and send re-answer")
         lock.lock()
         createAnswer(isSender: false,
                      offer: reOffer,
-                     constraints: webRTCConfiguration.nativeConstraints)
-        { answer, error in
+                     constraints: webRTCConfiguration.nativeConstraints) { answer, error in
             guard error == nil else {
                 Logger.error(type: .peerChannel,
                              message: "failed to create re-answer (\(error!.localizedDescription)")
@@ -756,22 +751,22 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
                     .peerChannelError(reason: "failed to create re-answer"))
                 return
             }
-            
+
             let message = Signaling.reAnswer(SignalingReAnswer(sdp: answer!))
             self.signalingChannel.send(message: message)
-            
-            if (self.configuration.isSender) {
+
+            if self.configuration.isSender {
                 self.updateSenderOfferEncodings()
             }
-            
+
             Logger.debug(type: .peerChannel, message: "call onUpdate")
             self.channel.internalHandlers.onUpdate?(answer!)
             self.channel.handlers.onUpdate?(answer!)
-            
+
             self.lock.unlock()
         }
     }
-    
+
     func handle(signaling: Signaling) {
         Logger.debug(type: .mediaStream, message: "handle signaling => \(signaling.typeName())")
         switch signaling {
@@ -779,7 +774,7 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
             clientId = offer.clientId
             connectionId = offer.connectionId
             createAndSendAnswer(offer: offer)
-            
+
         case .update(let update):
             if configuration.isMultistream {
                 createAndSendUpdateAnswer(forOffer: update.sdp)
@@ -808,16 +803,16 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
             } else {
                 signalingChannel.send(message: .pong(pong))
             }
-            
+
         default:
             break
         }
-        
+
         Logger.debug(type: .peerChannel, message: "call onReceiveSignaling")
         channel.internalHandlers.onReceiveSignaling?(signaling)
         channel.handlers.onReceiveSignaling?(signaling)
     }
-    
+
     func finishConnecting() {
         Logger.debug(type: .peerChannel, message: "did connect")
         Logger.debug(type: .peerChannel,
@@ -827,7 +822,7 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
         Logger.debug(type: .peerChannel,
                      message: "native receivers = \(nativeChannel.receivers.count)")
         state = .connected
-        
+
         if onConnectHandler != nil {
             Logger.debug(type: .peerChannel, message: "call connect(handler:)")
             onConnectHandler!(nil)
@@ -835,7 +830,7 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
         }
         lock.unlock()
     }
-    
+
     func disconnect(error: Error?) {
         switch state {
         case .disconnecting, .disconnected:
@@ -845,48 +840,48 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
             lock.waitDisconnect(error: error)
         }
     }
-    
+
     func basicDisconnect(error: Error?) {
         Logger.debug(type: .peerChannel, message: "try disconnecting")
         if let error = error {
             Logger.error(type: .peerChannel,
                          message: "error: \(error.localizedDescription)")
         }
-        
+
         state = .disconnecting
-        
+
         if configuration.isSender {
             terminateSenderStream()
         }
         channel.terminateAllStreams()
         nativeChannel.close()
-        
+
         signalingChannel.send(message: Signaling.disconnect)
         signalingChannel.disconnect(error: error)
-        
+
         state = .disconnected
-        
+
         Logger.debug(type: .peerChannel, message: "call onDisconnect")
         channel.internalHandlers.onDisconnect?(error)
         channel.handlers.onDisconnect?(error)
-        
+
         if onConnectHandler != nil {
             Logger.debug(type: .peerChannel, message: "call connect(handler:)")
             onConnectHandler!(error)
             onConnectHandler = nil
         }
-        
+
         Logger.debug(type: .peerChannel, message: "did disconnect")
     }
-    
+
     // MARK: - RTCPeerConnectionDelegate
-    
+
     func peerConnection(_ nativePeerConnection: RTCPeerConnection,
                         didChange stateChanged: RTCSignalingState) {
         Logger.debug(type: .peerChannel,
                      message: "signaling state: \(stateChanged)")
     }
-    
+
     func peerConnection(_ nativePeerConnection: RTCPeerConnection,
                         didAdd stream: RTCMediaStream) {
         Logger.debug(type: .peerChannel,
@@ -898,17 +893,17 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
                 return
             }
         }
-        
+
         if channel.configuration.isMultistream &&
             stream.streamId == clientId {
             Logger.debug(type: .peerChannel,
                          message: "stream already exists in multistream")
             return
         }
-        
+
         Logger.debug(type: .peerChannel, message: "add a stream")
         stream.audioTracks.first?.source.volume = MediaStreamAudioVolume.max
-        
+
         // WARN: connect シグナリングで audio=false とすると answer の生成に失敗するため、
         // 音声トラックを使用しない方法で回避する
         if !configuration.audioEnabled {
@@ -919,35 +914,35 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
                 stream.removeAudioTrack(track)
             }
         }
-        
+
         let stream = BasicMediaStream(peerChannel: self.channel,
                                       nativeStream: stream)
         channel.add(stream: stream)
     }
-    
+
     func peerConnection(_ nativePeerConnection: RTCPeerConnection,
                         didRemove stream: RTCMediaStream) {
         Logger.debug(type: .peerChannel,
                      message: "removed a media stream (id: \(stream.streamId))")
         channel.remove(streamId: stream.streamId)
     }
-    
+
     func peerConnectionShouldNegotiate(_ nativePeerConnection: RTCPeerConnection) {
         Logger.debug(type: .peerChannel, message: "required negatiation")
     }
-    
+
     func peerConnection(_ nativePeerConnection: RTCPeerConnection,
                         didChange newState: RTCIceConnectionState) {
         Logger.debug(type: .peerChannel,
                      message: "ICE connection state: \(newState)")
     }
-    
+
     func peerConnection(_ nativePeerConnection: RTCPeerConnection,
                         didChange newState: RTCIceGatheringState) {
         Logger.debug(type: .peerChannel,
                      message: "ICE gathering state: \(newState)")
     }
-    
+
     func peerConnection(_ peerConnection: RTCPeerConnection,
                         didChange newState: RTCPeerConnectionState) {
         Logger.debug(type: .peerChannel,
@@ -965,7 +960,7 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
             break
         }
     }
-    
+
     func peerConnection(_ nativePeerConnection: RTCPeerConnection,
                         didGenerate candidate: RTCIceCandidate) {
         Logger.debug(type: .peerChannel,
@@ -975,7 +970,7 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
         let message = Signaling.candidate(SignalingCandidate(candidate: candidate))
         signalingChannel.send(message: message)
     }
-    
+
     func peerConnection(_ nativePeerConnection: RTCPeerConnection,
                         didRemove candidates: [RTCIceCandidate]) {
         Logger.debug(type: .peerChannel,
@@ -994,21 +989,21 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
             channel.remove(iceCandidate: candidate)
         }
     }
-    
+
     // NOTE: Sora はデータチャネルに非対応
     func peerConnection(_ nativePeerConnection: RTCPeerConnection,
                         didOpen dataChannel: RTCDataChannel) {
         Logger.debug(type: .peerChannel, message: "opened data channel (ignored)")
         // 何もしない
     }
-    
+
 }
 
 extension RTCRtpSender {
-    
+
     func updateOfferEncodings(_ encodings: [SignalingOffer.Encoding]) {
         Logger.debug(type: .peerChannel, message: "update offer encodings for sender => \(senderId)")
-        
+
         // paramaters はアクセスのたびにコピーされてしまうので、すべての parameters をセットし直す
         let newParameters = parameters // コピーされる
         for oldEncoding in newParameters.encodings {
@@ -1017,12 +1012,12 @@ extension RTCRtpSender {
                 guard oldEncoding.rid == encoding.rid else {
                     continue
                 }
-                
+
                 if let rid = encoding.rid {
                     Logger.debug(type: .peerChannel, message: "rid => \(rid)")
                     oldEncoding.rid = rid
                 }
-                
+
                 Logger.debug(type: .peerChannel, message: "active => \(encoding.active)")
                 oldEncoding.isActive = encoding.active
                 Logger.debug(type: .peerChannel, message: "old active => \(oldEncoding.isActive)")
@@ -1031,21 +1026,21 @@ extension RTCRtpSender {
                     Logger.debug(type: .peerChannel, message: "maxFramerate:  \(value)")
                     oldEncoding.maxFramerate = NSNumber(floatLiteral: value)
                 }
-                
+
                 if let value = encoding.maxBitrate {
                     Logger.debug(type: .peerChannel, message: "maxBitrate: \(value))")
                     oldEncoding.maxBitrateBps = NSNumber(integerLiteral: value)
                 }
-                
+
                 if let value = encoding.scaleResolutionDownBy {
                     Logger.debug(type: .peerChannel, message: "scaleResolutionDownBy: \(value))")
                     oldEncoding.scaleResolutionDownBy = NSNumber(value: value)
                 }
-                
+
                 break
             }
         }
-        
+
         self.parameters = newParameters
     }
 }

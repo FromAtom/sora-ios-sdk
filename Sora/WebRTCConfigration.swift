@@ -5,34 +5,34 @@ import WebRTC
  メディア制約を表します。
  */
 public struct MediaConstraints {
-    
+
     /// 必須の制約
     public var mandatory: [String: String] = [:]
-    
+
     /// オプションの制約
     public var optional: [String: String] = [:]
-    
+
     // MARK: - ネイティブ
-    
+
     var nativeValue: RTCMediaConstraints {
         get {
             return RTCMediaConstraints(mandatoryConstraints: mandatory,
                                        optionalConstraints: optional)
         }
     }
-    
+
 }
 
 /**
  SDP でのマルチストリームの記述方式です。
  */
 public enum SDPSemantics {
-    
+
     /// Unified Plan
     case unifiedPlan
-    
+
     // MARK: - ネイティブ
-    
+
     var nativeValue: RTCSdpSemantics {
         get {
             switch self {
@@ -41,43 +41,43 @@ public enum SDPSemantics {
             }
         }
     }
-    
+
 }
 
 /**
  WebRTC に関する設定です。
  */
 public struct WebRTCConfiguration {
-    
+
     // MARK: メディア制約に関する設定
-    
+
     /// メディア制約
     public var constraints: MediaConstraints = MediaConstraints()
-    
+
     // MARK: ICE サーバーに関する設定
-    
+
     /// ICE サーバー情報のリスト
     public var iceServerInfos: [ICEServerInfo]
-    
+
     /// ICE 通信ポリシー
     public var iceTransportPolicy: ICETransportPolicy = .relay
 
     // MARK: SDP に関する設定
-    
+
     /// SDP でのマルチストリームの記述方式
     public var sdpSemantics: SDPSemantics = .unifiedPlan
-    
+
     // MARK: - インスタンスの生成
-    
+
     /**
      初期化します。
      */
     public init() {
         iceServerInfos = []
     }
-    
+
     // MARK: - ネイティブ
-    
+
     var nativeValue: RTCConfiguration {
         get {
             let config = RTCConfiguration()
@@ -95,11 +95,11 @@ public struct WebRTCConfiguration {
             return config
         }
     }
-    
+
     var nativeConstraints: RTCMediaConstraints {
         get { return constraints.nativeValue }
     }
-    
+
 }
 
 private var sdpSemanticsTable: PairTable<String, SDPSemantics> =
@@ -108,25 +108,25 @@ private var sdpSemanticsTable: PairTable<String, SDPSemantics> =
 
 /// :nodoc:
 extension SDPSemantics: Codable {
-    
+
     public init(from decoder: Decoder) throws {
         self = try sdpSemanticsTable.decode(from: decoder)
     }
-    
+
     public func encode(to encoder: Encoder) throws {
         try sdpSemanticsTable.encode(self, to: encoder)
     }
-    
+
 }
 
 /// :nodoc:
 extension MediaConstraints: Codable {
-    
+
     enum CodingKeys: String, CodingKey {
         case mandatory
         case optional
     }
-    
+
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         mandatory = try container.decode([String: String].self,
@@ -134,25 +134,25 @@ extension MediaConstraints: Codable {
         optional = try container.decode([String: String].self,
                                         forKey: .optional)
     }
-    
+
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(mandatory, forKey: .mandatory)
         try container.encode(optional, forKey: .optional)
     }
-    
+
 }
 
 /// :nodoc:
 extension WebRTCConfiguration: Codable {
-    
+
     enum CodingKeys: String, CodingKey {
         case constraints
         case iceServerInfos
         case iceTransportPolicy
         case sdpSemantics
     }
-    
+
     public init(from decoder: Decoder) throws {
         self.init()
         let container = try decoder.container(keyedBy: CodingKeys.self)
@@ -165,7 +165,7 @@ extension WebRTCConfiguration: Codable {
         sdpSemantics = try container.decode(SDPSemantics.self,
                                             forKey: .sdpSemantics)
     }
-    
+
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
         try container.encode(constraints, forKey: .constraints)
@@ -173,5 +173,5 @@ extension WebRTCConfiguration: Codable {
         try container.encode(iceTransportPolicy, forKey: .iceTransportPolicy)
         try container.encode(sdpSemantics, forKey: .sdpSemantics)
     }
-    
+
 }

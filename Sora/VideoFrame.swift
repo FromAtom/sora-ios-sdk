@@ -11,15 +11,15 @@ import WebRTC
  
  */
 public enum VideoFrame {
-    
+
     // MARK: - 定義
-    
+
     /// ネイティブの映像フレーム。
     /// `CMSampleBuffer` から生成した映像フレームは、ネイティブの映像フレームに変換されます。
     case native(capturer: RTCVideoCapturer?, frame: RTCVideoFrame)
-    
+
     // MARK: - プロパティ
-    
+
     /// 映像フレームの幅
     public var width: Int {
         get {
@@ -29,7 +29,7 @@ public enum VideoFrame {
             }
         }
     }
-    
+
     /// 映像フレームの高さ
     public var height: Int {
         get {
@@ -50,9 +50,8 @@ public enum VideoFrame {
         }
     }
 
-    
     // MARK: - 初期化
-    
+
     /**
      初期化します。
      指定されたサンプルバッファーからピクセル画像データを取得できなければ
@@ -73,5 +72,5 @@ public enum VideoFrame {
                                   timeStampNs: timeStampNs)
         self = .native(capturer: nil, frame: frame)
     }
-    
+
 }

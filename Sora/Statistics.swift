@@ -3,10 +3,10 @@ import WebRTC
 
 /// :nodoc:
 public class Statistics {
-    
+
     public var timestamp: CFTimeInterval
     public var entries: [StatisticsEntry] = []
-    
+
     init(contentsOf report: RTCStatisticsReport) {
         timestamp = report.timestamp_us
         for (_, statistics) in report.statistics {
@@ -14,7 +14,7 @@ public class Statistics {
             entries.append(entry)
         }
     }
-    
+
     public var jsonObject: Any {
         let json = NSMutableArray()
         for entry in entries {
@@ -22,7 +22,7 @@ public class Statistics {
             map["id"] = entry.id
             map["type"] = entry.type
             map["timestamp"] = entry.timestamp
-            map.merge(entry.values, uniquingKeysWith: { a, b in a })
+            map.merge(entry.values, uniquingKeysWith: { a, _ in a })
             json.add(map as NSDictionary)
         }
         return json
@@ -32,17 +32,17 @@ public class Statistics {
 
 /// :nodoc:
 public class StatisticsEntry {
-    
+
     public var id: String
     public var type: String
     public var timestamp: CFTimeInterval
     public var values: [String: NSObject]
-    
+
     init(contentsOf statistics: RTCStatistics) {
         id = statistics.id
         type = statistics.type
         timestamp = statistics.timestamp_us
         values = statistics.values
     }
-    
+
 }

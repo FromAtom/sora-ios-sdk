@@ -13,20 +13,20 @@ class URLSessionWebSocketChannel: WebSocketChannel {
     }
 
     var context: URLSessionWebSocketChannelContext!
-    
+
     public required init(url: URL) {
         self.url = url
         context = URLSessionWebSocketChannelContext(channel: self)
     }
-    
+
     public func connect(handler: @escaping (Error?) -> Void) {
         context.connect(handler: handler)
     }
-    
+
     public func disconnect(error: Error?) {
         context.disconnect(error: error)
     }
-    
+
     public func send(message: WebSocketMessage) {
         Logger.debug(type: .webSocketChannel, message: "send message")
         context.send(message: message)
@@ -36,25 +36,25 @@ class URLSessionWebSocketChannel: WebSocketChannel {
 
 @available(iOS 13, *)
 class URLSessionWebSocketChannelContext: NSObject, URLSessionDelegate, URLSessionTaskDelegate, URLSessionWebSocketDelegate {
-    
+
     weak var channel: URLSessionWebSocketChannel?
     var urlSession: URLSession?
     var webSocketTask: URLSessionWebSocketTask?
-    
+
     var state: ConnectionState = .disconnected {
         didSet {
             Logger.trace(type: .webSocketChannel,
                       message: "changed state from \(oldValue) to \(state)")
         }
     }
-    
+
     var onConnect: ((Error?) -> Void)?
 
     init(channel: URLSessionWebSocketChannel) {
         self.channel = channel
         super.init()
     }
-    
+
     func connect(handler: @escaping (Error?) -> Void) {
         guard let channel = channel else {
             return
@@ -65,7 +65,7 @@ class URLSessionWebSocketChannelContext: NSObject, URLSessionDelegate, URLSessio
                 "WebSocketChannel is already connected"))
             return
         }
-        
+
         Logger.debug(type: .webSocketChannel, message: "try connecting")
         state = .connecting
         onConnect = handler
@@ -76,7 +76,7 @@ class URLSessionWebSocketChannelContext: NSObject, URLSessionDelegate, URLSessio
         webSocketTask?.resume()
         receive()
     }
-    
+
     func disconnect(error: Error?) {
         guard let channel = channel else {
             webSocketTask?.cancel(with: .normalClosure, reason: nil)
@@ -87,33 +87,33 @@ class URLSessionWebSocketChannelContext: NSObject, URLSessionDelegate, URLSessio
         switch state {
         case .disconnecting, .disconnected:
             break
-            
+
         default:
             Logger.debug(type: .webSocketChannel, message: "try disconnecting")
             if error != nil {
                 Logger.debug(type: .webSocketChannel,
                              message: "error: \(error!.localizedDescription)")
             }
-            
+
             state = .disconnecting
             webSocketTask?.cancel(with: .normalClosure, reason: nil)
             urlSession?.invalidateAndCancel()
             state = .disconnected
-            
+
             Logger.debug(type: .webSocketChannel, message: "call onDisconnect")
             channel.internalHandlers.onDisconnect?(error)
             channel.handlers.onDisconnect?(error)
-            
+
             if onConnect != nil {
                 Logger.debug(type: .webSocketChannel, message: "call connect(handler:) handler")
                 onConnect!(error)
                 onConnect = nil
             }
-            
+
             Logger.debug(type: .webSocketChannel, message: "did disconnect")
         }
     }
-    
+
     func send(message: WebSocketMessage) {
         var naviveMessage: URLSessionWebSocketTask.Message!
         switch message {
@@ -134,7 +134,7 @@ class URLSessionWebSocketChannelContext: NSObject, URLSessionDelegate, URLSessio
             }
         }
     }
-    
+
     func receive() {
         webSocketTask?.receive { [weak self] result in
             guard let weakSelf = self else {
@@ -144,7 +144,7 @@ class URLSessionWebSocketChannelContext: NSObject, URLSessionDelegate, URLSessio
             switch result {
             case .success(let message):
                 Logger.debug(type: .webSocketChannel, message: "receive message => \(message)")
-                
+
                 var newMessage: WebSocketMessage?
                 switch message {
                 case .string(let string):
@@ -154,7 +154,7 @@ class URLSessionWebSocketChannelContext: NSObject, URLSessionDelegate, URLSessio
                 @unknown default:
                     break
                 }
-                
+
                 if let message = newMessage {
                     Logger.debug(type: .webSocketChannel, message: "call onReceive")
                     weakSelf.channel?.internalHandlers.onReceive?(message)
@@ -164,9 +164,9 @@ class URLSessionWebSocketChannelContext: NSObject, URLSessionDelegate, URLSessio
                               message: "received message is not string or binary (discarded)")
                     // discard
                 }
-                
+
                 weakSelf.receive()
-                
+
             case .failure(let error):
                 Logger.debug(type: .webSocketChannel,
                              message: "failed to receive error => \(error.localizedDescription)")
@@ -186,14 +186,14 @@ class URLSessionWebSocketChannelContext: NSObject, URLSessionDelegate, URLSessio
             onConnect = nil
         }
     }
-    
+
     func urlSession(_ session: URLSession,
                     webSocketTask: URLSessionWebSocketTask,
                     didCloseWith closeCode: URLSessionWebSocketTask.CloseCode,
                     reason: Data?) {
         Logger.debug(type: .webSocketChannel,
                      message: "closed with code => \(closeCode.rawValue)")
-        
+
         var reasonString: String?
         if let reason = reason {
             reasonString = String(data: reason, encoding: .utf8)
@@ -209,5 +209,5 @@ class URLSessionWebSocketChannelContext: NSObject, URLSessionDelegate, URLSessio
             disconnect(error: error)
         }
     }
-    
+
 }

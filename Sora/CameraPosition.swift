@@ -10,13 +10,13 @@ private var descriptionTable: PairTable<String, CameraPosition> =
  */
 @available(*, deprecated, message: "CameraPosition は廃止されました。")
 public enum CameraPosition {
-    
+
     /// 前面
     case front
-    
+
     /// 背面
     case back
-    
+
     /**
      カメラの位置の前面と背面を反転します。
      
@@ -30,14 +30,14 @@ public enum CameraPosition {
             return .front
         }
     }
-    
+
 }
 
 extension CameraPosition: CustomStringConvertible {
-    
+
     /// 文字列表現を返します。
     public var description: String {
         return descriptionTable.left(other: self)!
     }
-    
+
 }

@@ -31,23 +31,22 @@ class WrapperVideoEncoderFactory: NSObject, RTCVideoEncoderFactory {
 
 }
 
-
 class NativePeerChannelFactory {
-    
+
     static var `default`: NativePeerChannelFactory = NativePeerChannelFactory()
-    
+
     var nativeFactory: RTCPeerConnectionFactory
-    
+
     init() {
         Logger.debug(type: .peerChannel, message: "create native peer channel factory")
-        
+
         // 映像コーデックのエンコーダーとデコーダーを用意する
         let encoder = WrapperVideoEncoderFactory.shared
         let decoder = RTCDefaultVideoDecoderFactory()
         nativeFactory =
             RTCPeerConnectionFactory(encoderFactory: encoder,
                                      decoderFactory: decoder)
-        
+
         for info in encoder.supportedCodecs() {
             Logger.debug(type: .peerChannel,
                          message: "supported video encoder: \(info.name) \(info.parameters)")
@@ -57,7 +56,7 @@ class NativePeerChannelFactory {
                          message: "supported video decoder: \(info.name) \(info.parameters)")
         }
     }
-    
+
     func createNativePeerChannel(configuration: WebRTCConfiguration,
                                  constraints: MediaConstraints,
                                  delegate: RTCPeerConnectionDelegate?) -> RTCPeerConnection? {
@@ -66,30 +65,30 @@ class NativePeerChannelFactory {
                             constraints: constraints.nativeValue,
                             delegate: delegate)
     }
-    
+
     func createNativeStream(streamId: String) -> RTCMediaStream {
         return nativeFactory.mediaStream(withStreamId: streamId)
     }
-    
+
     func createNativeVideoSource() -> RTCVideoSource {
         return nativeFactory.videoSource()
     }
-    
+
     func createNativeVideoTrack(videoSource: RTCVideoSource,
                                 trackId: String) -> RTCVideoTrack {
         return nativeFactory.videoTrack(with: videoSource, trackId: trackId)
     }
-    
+
     func createNativeAudioSource(constraints: MediaConstraints?) -> RTCAudioSource {
         return nativeFactory.audioSource(with: constraints?.nativeValue)
     }
-    
+
     func createNativeAudioTrack(trackId: String,
                                 constraints: RTCMediaConstraints) -> RTCAudioTrack {
         let audioSource = nativeFactory.audioSource(with: constraints)
         return nativeFactory.audioTrack(with: audioSource, trackId: trackId)
     }
-    
+
     func createNativeSenderStream(streamId: String,
                                      videoTrackId: String?,
                                      audioTrackId: String?,
@@ -97,7 +96,7 @@ class NativePeerChannelFactory {
         Logger.debug(type: .nativePeerChannel,
                      message: "create native sender stream (\(streamId))")
         let nativeStream = createNativeStream(streamId: streamId)
-        
+
         if let trackId = videoTrackId {
             Logger.debug(type: .nativePeerChannel,
                          message: "create native video track (\(trackId))")
@@ -106,7 +105,7 @@ class NativePeerChannelFactory {
                                                     trackId: trackId)
             nativeStream.addVideoTrack(videoTrack)
         }
-        
+
         if let trackId = audioTrackId {
             Logger.debug(type: .nativePeerChannel,
                          message: "create native audio track (\(trackId))")
@@ -114,22 +113,22 @@ class NativePeerChannelFactory {
                                                     constraints: constraints.nativeValue)
             nativeStream.addAudioTrack(audioTrack)
         }
-        
+
         return nativeStream
     }
-    
+
     // クライアント情報としての Offer SDP を生成する
     func createClientOfferSDP(configuration: WebRTCConfiguration,
                               constraints: MediaConstraints,
                               handler: @escaping (String?, Error?) -> Void) {
         let peer = createNativePeerChannel(configuration: configuration, constraints: constraints, delegate: nil)
-        
+
         // `guard let peer = peer {` と書いた場合、 Xcode 12.5 でビルド・エラーになった
         guard let peer2 = peer else {
             handler(nil, SoraError.peerChannelError(reason: "createNativePeerChannel failed"))
             return
         }
-        
+
         let stream = createNativeSenderStream(streamId: "offer",
                                                  videoTrackId: "video",
                                                  audioTrackId: "audio",
@@ -145,5 +144,5 @@ class NativePeerChannelFactory {
             peer2.close()
         }
     }
-    
+
 }

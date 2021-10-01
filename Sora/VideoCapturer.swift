@@ -29,7 +29,7 @@ public protocol VideoCapturer: AnyObject {
  生成された映像フレームはこのプロトコルの実装によって加工されます。
  */
 public protocol VideoFilter: AnyObject {
-    
+
     /**
      映像フレームを加工します。
      
@@ -37,5 +37,5 @@ public protocol VideoFilter: AnyObject {
      - returns: 加工後の映像フレーム
      */
     func filter(videoFrame: VideoFrame) -> VideoFrame
-    
+
 }

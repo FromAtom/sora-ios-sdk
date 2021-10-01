@@ -3,7 +3,7 @@ import WebRTC
 
 /// :nodoc:
 extension RTCSignalingState: CustomStringConvertible {
-    
+
     public var description: String {
         get {
             switch self {
@@ -18,12 +18,12 @@ extension RTCSignalingState: CustomStringConvertible {
             }
         }
     }
-    
+
 }
 
 /// :nodoc:
 extension RTCIceConnectionState: CustomStringConvertible {
-    
+
     public var description: String {
         get {
             switch self {
@@ -40,12 +40,12 @@ extension RTCIceConnectionState: CustomStringConvertible {
             }
         }
     }
-    
+
 }
 
 /// :nodoc:
 extension RTCIceGatheringState: CustomStringConvertible {
-    
+
     public var description: String {
         get {
             switch self {
@@ -57,12 +57,12 @@ extension RTCIceGatheringState: CustomStringConvertible {
             }
         }
     }
-    
+
 }
 
 /// :nodoc:
 extension RTCSessionDescription {
-    
+
     public var sdpDescription: String {
         get {
             let lines = sdp.components(separatedBy: .newlines)
@@ -72,5 +72,5 @@ extension RTCSessionDescription {
             return lines.joined(separator: "\n")
         }
     }
-    
+
 }
