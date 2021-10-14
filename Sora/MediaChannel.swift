@@ -295,7 +295,7 @@ public final class MediaChannel {
                 return
             }
             if weakSelf.state == .connecting || weakSelf.state == .connected {
-                weakSelf.disconnect(error: error)
+                weakSelf.internalDisconnect(error: error)
             }
             connectionTask.complete()
         }
@@ -305,7 +305,7 @@ public final class MediaChannel {
                 return
             }
             if weakSelf.state == .connecting || weakSelf.state == .connected {
-                weakSelf.disconnect(error: error)
+                weakSelf.internalDisconnect(error: error)
             }
             connectionTask.complete()
         }
@@ -358,7 +358,7 @@ public final class MediaChannel {
             
             if let error = error {
                 Logger.error(type: .mediaChannel, message: "failed to connect")
-                weakSelf.disconnect(error: error)
+                weakSelf.internalDisconnect(error: error)
                 handler(error)
                 
                 Logger.debug(type: .mediaChannel, message: "call onConnect")
@@ -377,7 +377,7 @@ public final class MediaChannel {
         self.connectionStartTime = Date()
         connectionTimer.run {
             Logger.error(type: .mediaChannel, message: "connection timeout")
-            self.disconnect(error: SoraError.connectionTimeout)
+            self.internalDisconnect(error: SoraError.connectionTimeout)
         }
     }
     
@@ -386,7 +386,13 @@ public final class MediaChannel {
      
      - parameter error: 接続解除の原因となったエラー
      */
-    public func disconnect(error: Error?) {
+    public func disconnect() {
+        internalDisconnect(error: nil, isUserAction: true)
+    }
+
+    
+    // isUserAction: true の場合、 SDK の外側から切断処理が実行されたと考える
+    func internalDisconnect(error: Error?, isUserAction: Bool = false) {
         switch state {
         case .disconnecting, .disconnected:
             break
@@ -403,7 +409,7 @@ public final class MediaChannel {
             
             state = .disconnecting
             connectionTimer.stop()
-            peerChannel.disconnect(error: error)
+            peerChannel.disconnect(error: error, isUserAction: isUserAction)
             Logger.debug(type: .mediaChannel, message: "did disconnect")
             state = .disconnected
             

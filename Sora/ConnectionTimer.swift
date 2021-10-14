@@ -27,7 +27,7 @@ enum ConnectionMonitor {
         case .signalingChannel(let chan):
             chan.disconnect(error: error)
         case .peerChannel(let chan):
-            chan.disconnect(error: error)
+            chan.disconnect(error: error, isUserAction: false)
         }
     }
     

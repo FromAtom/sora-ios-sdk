@@ -166,7 +166,7 @@ public protocol PeerChannel: AnyObject {
      
      - parameter error: 接続解除の原因となったエラー
      */
-    func disconnect(error: Error?)
+    func disconnect(error: Error?, isUserAction: Bool)
     
 }
 
@@ -241,8 +241,8 @@ class BasicPeerChannel: PeerChannel {
         context.connect(handler: handler)
     }
     
-    func disconnect(error: Error?) {
-        context.disconnect(error: error)
+    func disconnect(error: Error?, isUserAction: Bool = false) {
+        context.disconnect(error: error, isUserAction: isUserAction)
     }
     
     fileprivate func terminateAllStreams() {
@@ -266,9 +266,9 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
         var count: Int = 0
         var shouldDisconnect: (Bool, Error?) = (false, nil)
         
-        func waitDisconnect(error: Error?) {
+        func waitDisconnect(error: Error?, isUserAction: Bool = false) {
             if count == 0 {
-                context?.basicDisconnect(error: error)
+                context?.basicDisconnect(error: error, isUserAction: isUserAction)
             } else {
                 shouldDisconnect = (true, error)
             }
@@ -906,7 +906,7 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
         lock.unlock()
     }
     
-    func disconnect(error: Error?) {
+    func disconnect(error: Error?, isUserAction: Bool = false) {
         switch state {
         case .disconnecting, .disconnected:
             break
@@ -916,7 +916,7 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
         }
     }
     
-    func basicDisconnect(error: Error?) {
+    func basicDisconnect(error: Error?, isUserAction: Bool = false) {
         Logger.debug(type: .peerChannel, message: "try disconnecting")
         if let error = error {
             Logger.error(type: .peerChannel,
@@ -931,6 +931,7 @@ class BasicPeerChannelContext: NSObject, RTCPeerConnectionDelegate {
         channel.terminateAllStreams()
         nativeChannel.close()
         
+        // TODO: userAction を参考に disconnect を決める
         signalingChannel.send(message: Signaling.disconnect)
         signalingChannel.disconnect(error: error)
         

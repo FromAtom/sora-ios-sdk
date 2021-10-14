@@ -428,7 +428,7 @@ public final class ConnectionTask {
     public func cancel() {
         if state == .connecting {
             Logger.debug(type: .mediaChannel, message: "connection task cancelled")
-            peerChannel?.disconnect(error: SoraError.connectionCancelled)
+            peerChannel?.disconnect(error: SoraError.connectionCancelled, isUserAction: true)
             state = .canceled
         }
     }
