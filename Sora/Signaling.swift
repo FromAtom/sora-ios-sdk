@@ -124,7 +124,7 @@ public enum Signaling {
     case pong(SignalingPong)
     
     /// "disconnect" シグナリング
-    case disconnect
+    case disconnect(SignalingDisconnect)
     
     /// "pong" シグナリング
     case push(SignalingPush)
@@ -773,6 +773,13 @@ public struct SignalingPing {
  */
 public struct SignalingPong {}
 
+/**
+ "disconnect" シグナリングメッセージを表します。
+ */
+public struct SignalingDisconnect {
+    public var reason: String?
+}
+
 // MARK: -
 // MARK: Codable
 
@@ -1312,6 +1319,23 @@ extension SignalingPong: Codable {
     
 }
 
+/// :nodoc:
+extension SignalingDisconnect: Codable {
+    
+    enum CodingKeys: String, CodingKey {
+        case reason
+    }
+    
+    public init(from decoder: Decoder) throws {
+        throw SoraError.invalidSignalingMessage
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        reason = try container.encodeIfPresent(String.self, forKey: .reason)
+    }
+}
+
+/// :nodoc:
 extension SignalingSwitched: Decodable {
     
     enum CodingKeys: String, CodingKey {
