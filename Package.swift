@@ -10,16 +10,13 @@ let package = Package(
     platforms: [.iOS(.v12)],
     products: [
         .library(name: "Sora", targets: ["Sora"]),
-        .library(name: "WebRTC", targets: ["WebRTC"]),
+        //.library(name: "WebRTC", targets: ["WebRTC"]),
     ],
     dependencies: [
-        .package(url: "https://github.com/daltoniam/Starscream.git", .exact( "4.0.4")),
+        .package(url: "https://github.com/daltoniam/Starscream.git", .exact("4.0.4")),
+        .package(url: "https://github.com/stasel/WebRTC.git", .upToNextMajor("95.0.0"))
     ],
     targets: [
-        .binaryTarget(
-            name: "WebRTC",
-            url: "https://github.com/shiguredo/sora-ios-sdk-specs/releases/download/\(file)",
-            checksum: "2534f2c4810dae7189b1388b8d4069072a19033c0f09e5c292c9fc3a663c16c1"),
         .target(
             name: "Sora",
             dependencies: ["WebRTC", "Starscream"],
