@@ -13,7 +13,7 @@ let package = Package(
     ],
     dependencies: [
         .package(url: "https://github.com/daltoniam/Starscream.git", .exact("4.0.4")),
-        .package(url: "https://github.com/stasel/WebRTC.git", .upToNextMajor("95.0.0"))
+        .package(url: "https://github.com/stasel/WebRTC.git", .upToNextMajor(from: "95.0.0"))
     ],
     targets: [
         .target(
