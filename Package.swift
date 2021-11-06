@@ -9,7 +9,7 @@ let package = Package(
     name: "Sora",
     platforms: [.iOS(.v12)],
     products: [
-        .library(name: "Sora", targets: ["Sora"]),
+        .library(name: "Sora", targets: ["Sora"])
         //.library(name: "WebRTC", targets: ["WebRTC"]),
     ],
     dependencies: [
